@@ -16,7 +16,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  min-height: 100vh;
   background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
   background-size: 400% 400%;
   font-family: sans-serif;
@@ -43,13 +43,13 @@ body {
   margin: 0 auto;
   padding: 20px;
   min-height: 100vh;
+  width: 100%;
 }
 
 /* 首页hero区域 - 去掉背景容器 */
 .hero {
   text-align: center;
-  padding: 40px 20px;
-  margin-bottom: 30px;
+  padding: 40px 16px;
 }
 
 .hero h1 {
@@ -155,7 +155,7 @@ body {
 
 /* GitHub 卡片容器 - 简化 */
 .card-container {
-  margin: 30px 0;
+  margin: 12px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -259,8 +259,6 @@ body {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
-
-
 .repo-name {
   font-size: 1.6rem;
   font-weight: 700;
@@ -275,8 +273,6 @@ body {
   line-height: 1.4;
   margin: 0;
 }
-
-
 
 /* 卡片统计数据 - 简化无背景版本 */
 .card-stats {
@@ -348,7 +344,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
-  padding: 12px 0;
+  padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   justify-content: center;
 }
@@ -538,6 +534,8 @@ body {
   font-size: 0.9rem;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .example-link:hover {
@@ -549,125 +547,251 @@ body {
 
 /* 响应式设计 - 更新以配合无背景hero布局 */
 @media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+  
+  body {
+    align-items: flex-start;
+    padding: 10px 0;
+  }
+  
   .container {
-    padding: 15px;
+    padding: 10px;
+    min-height: auto;
   }
   
   .hero {
-    padding: 30px 15px;
+    padding: 20px 10px;
   }
   
   .hero h1 {
-    font-size: 2rem;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
   }
   
   .hero p {
-    font-size: 1rem;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+  
+  .search-form {
+    margin-bottom: 20px;
   }
   
   .input-group {
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
   }
   
   .url-input {
     min-width: auto;
     width: 100%;
+    padding: 12px 16px;
+    font-size: 0.95rem;
   }
   
   .search-btn {
     width: 100%;
+    padding: 12px 24px;
+    font-size: 0.95rem;
+  }
+  
+  .examples {
+    margin-top: 15px;
+  }
+  
+  .examples h3 {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
   }
   
   .example-links {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0 10px;
+    /* 隐藏滚动条但保持滚动功能 */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .example-links::-webkit-scrollbar {
+    display: none;
   }
   
   .example-link {
-    min-width: 150px;
-    text-align: center;
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    min-width: fit-content;
   }
   
   .github-card {
-    padding: 20px;
-    margin: 0 10px;
+    padding: 16px;
+    margin: 0 5px;
+    max-width: none;
   }
   
   .card-header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
     gap: 12px;
-  }
-  
-  /* 移动端头像调整 */
-  .owner-avatar {
-    align-self: center;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
   }
   
   .avatar-image {
-    width: 50px;
-    height: 50px;
+    width: 45px;
+    height: 45px;
   }
   
   .repo-name {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
+    line-height: 1.3;
   }
   
-  /* 移动端额外信息调整 */
-  .card-extra-info {
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-  }
-  
-  .info-item {
-    justify-content: center;
+  .repo-description {
+    font-size: 0.85rem;
+    line-height: 1.4;
   }
   
   .card-stats {
-    gap: 25px;
+    gap: 20px;
     padding: 8px 0;
+    margin-bottom: 16px;
   }
   
   .stat-value {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+  }
+  
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .stat-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .card-extra-info {
+    gap: 15px;
+    padding: 10px 0;
+  }
+  
+  .info-item {
+    font-size: 0.8rem;
   }
   
   .card-actions {
     flex-direction: column;
     width: 100%;
+    gap: 10px;
   }
   
   .action-btn {
     width: 100%;
     justify-content: center;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+  
+  .notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+    font-size: 13px;
+    padding: 12px 16px;
   }
 }
 
 @media (max-width: 480px) {
+  html {
+    font-size: 13px;
+  }
+  
   .hero h1 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
   }
   
   .hero {
-    padding: 25px 10px;
+    padding: 15px 8px;
   }
   
   .hero p {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+  }
+  
+  .container {
+    padding: 8px;
   }
   
   .github-card {
-    margin: 0 5px;
-    padding: 15px;
+    margin: 0;
+    padding: 12px;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+  
+  .avatar-image {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .repo-name {
+    font-size: 1.1rem;
+  }
+  
+  .repo-description {
+    font-size: 0.8rem;
   }
   
   .card-stats {
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 15px;
+    justify-content: center;
+  }
+  
+  .stat-item {
+    flex: 1;
+    min-width: 80px;
+  }
+  
+  .card-extra-info {
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+  
+  /* 超小屏幕examples优化 */
+  .examples {
+    margin-top: 12px;
+  }
+  
+  .examples h3 {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+  
+  .example-links {
+    gap: 5px;
+    padding: 0 5px;
+  }
+  
+  .example-link {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    border-radius: 10px;
   }
 }
 

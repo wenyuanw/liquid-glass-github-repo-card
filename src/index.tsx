@@ -8,7 +8,7 @@ app.use(renderer)
 
 // 首页 - 项目卡片生成器
 app.get('/', async (c) => {
-  const url = c.req.query('q') || c.req.query('url') // 兼容两种参数名
+  const url = c.req.query('q') || 'wenyuanw/liquid-glass-github-repo-card'
   let repoData: GitHubRepoData | null = null
   let error: string | null = null
 
@@ -76,14 +76,13 @@ app.get('/', async (c) => {
     <div class="container">
       <div class="hero">
         <h1>GitHub 项目卡片生成器</h1>
-        <p>输入 GitHub 项目地址来生成精美的项目卡片</p>
         <form class="search-form" method="get" action="/">
           <div class="input-group">
             <input 
               type="text" 
               name="q" 
               value={url || ''}
-              placeholder="例如：https://github.com/microsoft/vscode 或 microsoft/vscode"
+              placeholder="例：输入 microsoft/vscode 或完整 url"
               required
               class="url-input"
             />
@@ -94,7 +93,7 @@ app.get('/', async (c) => {
         <div class="examples">
           <h3>试试这些热门项目：</h3>
           <div class="example-links">
-            <a href="/?q=microsoft/vscode" class="example-link">Microsoft VSCode</a>
+            <a href="/?q=microsoft/vscode" class="example-link">VSCode</a>
             <a href="/?q=facebook/react" class="example-link">React</a>
             <a href="/?q=vercel/next.js" class="example-link">Next.js</a>
             <a href="/?q=honojs/hono" class="example-link">Hono</a>
@@ -213,15 +212,6 @@ app.get('/', async (c) => {
               </span>
               分享链接
             </button>
-            <a href={repoData.html_url} target="_blank" rel="noopener noreferrer" class="action-btn view-btn">
-              <span class="btn-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </span>
-              查看项目
-            </a>
           </div>
         </div>
       )}
@@ -305,9 +295,7 @@ app.get('/', async (c) => {
                 <h3 style="margin-top: 0;">📸 截图指导</h3>
                 <p>即将弹出截图选择窗口，请按以下步骤操作：</p>
                 <div style="text-align: left; margin: 15px 0;">
-                  <p>🎯 <strong>首选：</strong>选择"Chrome 标签页"或"浏览器标签页"</p>
-                  <p>🖥️ <strong>备选：</strong>选择"整个屏幕"（需要后续裁切）</p>
-                  <p>🪟 <strong>备选：</strong>选择当前浏览器窗口</p>
+                  <p>选择窗口-当前的浏览器窗口</p>
                 </div>
                 <button id="start-capture" style="
                   background: #667eea;

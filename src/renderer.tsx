@@ -17,7 +17,7 @@ export const renderer = jsxRenderer(({ children, title }): any => {
     <html lang="zh-CN">
       <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <title>{pageTitle}</title>
         <meta name="description" content="一个精美的 GitHub 项目卡片生成器，支持生成、下载和分享精美的项目展示卡片，让您的项目更加引人注目" />
         <meta name="keywords" content="GitHub, 项目卡片, 卡片生成器, 项目展示, 开源项目, 代码仓库, 项目宣传" />
