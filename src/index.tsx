@@ -109,7 +109,14 @@ app.get('/', async (c) => {
 
       {repoData && (
         <div class="card-container">
-          <div id="github-card" class="github-card liquidGlass-wrapper">
+          <div 
+            id="github-card" 
+            class="github-card liquidGlass-wrapper" 
+            onclick="openRepository(this.dataset.repo)"
+            data-repo={repoData.full_name}
+            style="cursor: pointer;"
+            title={`点击访问 ${repoData.full_name} 的 GitHub 仓库`}
+          >
             <div class="liquidGlass-effect"></div>
             <div class="liquidGlass-tint"></div>
             <div class="liquidGlass-shine"></div>
@@ -192,8 +199,8 @@ app.get('/', async (c) => {
             </div>
           </div>  
 
-          <div class="card-actions">
-            <button onclick="downloadCard()" class="action-btn download-btn">
+          <div class="card-actions" onclick="event.stopPropagation()">
+            <button onclick="downloadCard(); event.stopPropagation();" class="action-btn download-btn">
               <span class="btn-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -203,7 +210,7 @@ app.get('/', async (c) => {
               </span>
               下载卡片
             </button>
-            <button onclick="shareCard()" class="action-btn share-btn">
+            <button onclick="shareCard(); event.stopPropagation();" class="action-btn share-btn">
               <span class="btn-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
@@ -569,6 +576,17 @@ app.get('/', async (c) => {
           }
           
 
+          
+          // 打开GitHub仓库
+          function openRepository(fullName) {
+            if (!fullName) {
+              console.error('仓库名称不能为空');
+              return;
+            }
+            const url = 'https://github.com/' + fullName;
+            console.log('正在打开:', url); // 调试信息
+            window.open(url, '_blank', 'noopener,noreferrer');
+          }
           
           // 主导出函数 - 直接使用截图方式
           async function downloadCard() {
