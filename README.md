@@ -4,7 +4,8 @@
 
 ## 预览
 
-![preview](./preview.png)
+<img width="711" alt="preview" src="https://github.com/user-attachments/assets/9373e1bd-a123-43a8-8d23-792276f57316" />
+
 
 ## ✨ 主要功能
 
@@ -46,6 +47,6 @@ bun run dev
 bun run deploy
 ```
 
-## �� 许可证
+## 📃 许可证
 
 MIT License
