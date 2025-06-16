@@ -1,5 +1,5 @@
 {
-  "name": "github-info-workers",
+  "name": "liquid-glass-github-repo-card",
   "type": "module",
   "scripts": {
     "dev": "vite",

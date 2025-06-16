@@ -2,6 +2,10 @@
 
 一个简洁美观的 GitHub 项目卡片生成工具，输入项目地址即可生成精美的项目展示卡片，支持导出图片。
 
+## 预览
+
+![preview](./preview.png)
+
 ## ✨ 主要功能
 
 - 🎨 **液态玻璃效果**：现代化的玻璃态卡片设计
@@ -21,7 +25,15 @@
 - **运行时**：Cloudflare Workers
 - **构建**：Vite + TypeScript
 
-## 🎯 快速开始
+## 🎯 **快速开始**
+
+### 📦 一键部署
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/wenyuanw/liquid-glass-github-repo-card)
+
+点击上方按钮即可一键部署到 Cloudflare Workers。
+
+### 🚀 本地开发
 
 ```bash
 # 安装依赖
@@ -34,6 +46,6 @@ bun run dev
 bun run deploy
 ```
 
-## 📄 许可证
+## �� 许可证
 
 MIT License

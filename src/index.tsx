@@ -8,7 +8,7 @@ app.use(renderer)
 
 // 首页 - 项目卡片生成器
 app.get('/', async (c) => {
-  const url = c.req.query('q') || 'wenyuanw/liquid-glass-github-repo-card'
+  const url = c.req.query('q') || 'wenyuanw/quick-prompt'
   let repoData: GitHubRepoData | null = null
   let error: string | null = null
 
