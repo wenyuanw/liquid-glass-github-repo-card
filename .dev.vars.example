@@ -1,0 +1,8 @@
+# 开发环境变量文件
+# 复制此文件为 .dev.vars 并填入你的 GitHub Token
+
+# GitHub Personal Access Token (可选)
+# 获取方式：GitHub -> Settings -> Developer settings -> Personal access tokens -> Generate new token
+# 选择 "public_repo" 权限即可
+# 添加Token后API限制从每小时60次提升到5000次
+GITHUB_TOKEN=your_github_token_here 

@@ -1,0 +1,755 @@
+/* 全局样式重置和基础设置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  font-family: sans-serif;
+  font-weight: 300;
+
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 容器和布局 */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+/* 首页hero区域 - 去掉背景容器 */
+.hero {
+  text-align: center;
+  padding: 40px 20px;
+  margin-bottom: 30px;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  color: white;
+  font-weight: 700;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.hero p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 30px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 搜索表单 - 优化按钮并统一圆角 */
+.search-form {
+  max-width: 500px;
+  margin: 0 auto 30px auto;
+}
+
+.input-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.url-input {
+  flex: 1;
+  min-width: 280px;
+  padding: 14px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.url-input:focus {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.search-btn {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+  color: white;
+  border: none;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(33, 147, 176, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.search-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(33, 147, 176, 0.4);
+}
+
+.search-btn:hover::before {
+  left: 100%;
+}
+
+/* 错误信息 - 统一圆角 */
+.error-message {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  color: #d70015;
+  padding: 15px;
+  border-radius: 16px;
+  margin: 20px 0;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+/* GitHub 卡片容器 - 简化 */
+.card-container {
+  margin: 30px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* 液体玻璃效果样式 */
+.liquidGlass-wrapper {
+  position: relative;
+  display: flex;
+  font-weight: 600;
+  overflow: hidden;
+  
+  color: black;
+  cursor: pointer;
+  
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+  
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.liquidGlass-effect {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  
+  backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.liquidGlass-tint {
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.liquidGlass-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  
+  overflow: hidden;
+  
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.liquidGlass-text {
+  z-index: 3;
+  font-size: 2rem;
+  color: white;
+}
+
+/* GitHub 卡片主体 - 使用液体玻璃效果 */
+.github-card {
+  max-width: 550px;
+  width: 100%;
+  padding: 25px;
+  border-radius: 16px;
+}
+
+.github-card,
+.github-card > div {
+  border-radius: 16px;
+}
+
+/* 卡片头部 - 简化 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+.repo-info {
+  flex: 1;
+}
+
+/* 头像样式 */
+.owner-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  object-fit: cover;
+}
+
+.avatar-image:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+
+
+.repo-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.repo-description {
+  color: white;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+
+
+/* 卡片统计数据 - 简化无背景版本 */
+.card-stats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  margin-bottom: 20px;
+  padding: 10px 0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.stat-icon {
+  font-size: 1.2rem;
+  color: #2193b0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(33, 147, 176, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.stat-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+/* 为不同类型的统计项设置不同的颜色 */
+.stat-item:nth-child(1) .stat-icon {
+  color: #f39c12;
+  background: rgba(243, 156, 18, 0.1);
+}
+
+.stat-item:nth-child(2) .stat-icon {
+  color: #2ecc71;  
+  background: rgba(46, 204, 113, 0.1);
+}
+
+.stat-item:nth-child(3) .stat-icon {
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+/* 鼠标悬停效果 */
+.stat-item:hover .stat-icon {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: white;
+}
+
+/* 额外信息行 */
+.card-extra-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: center;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.info-icon {
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+.info-text {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+/* 卡片元数据 - 统一圆角 */
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 16px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.meta-label {
+  font-weight: 600;
+  color: #666;
+}
+
+.meta-value {
+  color: #333;
+  font-weight: 500;
+}
+
+/* 卡片主题标签 - 科技感配色 */
+.card-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.topic-tag {
+  background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* 卡片底部 */
+.card-footer {
+  text-align: center;
+  padding-top: 15px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.repo-url {
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+/* 卡片操作按钮 - 统一圆角 */
+.card-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+  box-shadow: 0 3px 10px rgba(33, 147, 176, 0.2);
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(33, 147, 176, 0.3);
+}
+
+.download-btn {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  box-shadow: 0 3px 10px rgba(46, 204, 113, 0.2);
+}
+
+.download-btn:hover {
+  box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+}
+
+.share-btn {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  box-shadow: 0 3px 10px rgba(243, 156, 18, 0.2);
+}
+
+.share-btn:hover {
+  box-shadow: 0 5px 15px rgba(243, 156, 18, 0.3);
+}
+
+.view-btn {
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  box-shadow: 0 3px 10px rgba(155, 89, 182, 0.2);
+}
+
+.view-btn:hover {
+  box-shadow: 0 5px 15px rgba(155, 89, 182, 0.3);
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+/* 示例链接 - 集成到hero区域内并统一圆角 */
+.examples {
+  margin-top: 30px;
+}
+
+.examples h3 {
+  margin-bottom: 15px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.example-links {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.example-link {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: none;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 0.9rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.example-link:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 响应式设计 - 更新以配合无背景hero布局 */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+  
+  .hero {
+    padding: 30px 15px;
+  }
+  
+  .hero h1 {
+    font-size: 2rem;
+  }
+  
+  .hero p {
+    font-size: 1rem;
+  }
+  
+  .input-group {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .url-input {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .search-btn {
+    width: 100%;
+  }
+  
+  .example-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .example-link {
+    min-width: 150px;
+    text-align: center;
+  }
+  
+  .github-card {
+    padding: 20px;
+    margin: 0 10px;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  /* 移动端头像调整 */
+  .owner-avatar {
+    align-self: center;
+    margin-bottom: 10px;
+  }
+  
+  .avatar-image {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .repo-name {
+    font-size: 1.4rem;
+  }
+  
+  /* 移动端额外信息调整 */
+  .card-extra-info {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .info-item {
+    justify-content: center;
+  }
+  
+  .card-stats {
+    gap: 25px;
+    padding: 8px 0;
+  }
+  
+  .stat-value {
+    font-size: 1.2rem;
+  }
+  
+  .card-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+  
+  .hero {
+    padding: 25px 10px;
+  }
+  
+  .hero p {
+    font-size: 0.95rem;
+  }
+  
+  .github-card {
+    margin: 0 5px;
+    padding: 15px;
+  }
+  
+  .card-stats {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
+
+/* 通知系统样式 */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  max-width: 300px;
+  word-wrap: break-word;
+}
+
+.notification.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.notification-success {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.notification-error {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.notification-info {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+/* 按钮禁用状态 */
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.action-btn:disabled:hover {
+  transform: none !important;
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2) !important;
+}
+
+/* 加载动画 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.action-btn:disabled .btn-icon svg {
+  animation: spin 1s linear infinite;
+}
+
+/* 液体玻璃效果增强 */
+.liquidGlass-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.github-card .liquidGlass-text {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100%;
+} 

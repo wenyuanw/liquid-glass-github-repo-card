@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "github-info-workers",
+  "compatibility_date": "2024-04-01",
+  "main": "./src/index.tsx",
+  "vars": {
+    "NODE_ENV": "production"
+  },
+  // 在 Cloudflare Workers 面板中设置 GITHUB_TOKEN 密钥
+  // 或者在本地开发时在 .dev.vars 文件中设置
+  // GITHUB_TOKEN=your_token_here
+}
