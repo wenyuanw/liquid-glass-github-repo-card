@@ -86,7 +86,16 @@ app.get('/', async (c) => {
               required
               class="url-input"
             />
-            <button type="submit" class="search-btn">生成卡片</button>
+            <button type="submit" class="search-btn">
+              <span class="btn-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                  <path d="M8 3L4 7L8 11" stroke-width="1" opacity="0.6"/>
+                  <path d="M16 3L20 7L16 11" stroke-width="1" opacity="0.6"/>
+                </svg>
+              </span>
+              生成卡片
+            </button>
           </div>
         </form>
         
@@ -569,21 +578,43 @@ app.get('/', async (c) => {
                 justify-content: center;
                 z-index: 10000;
                 overflow-y: auto;
-                padding: 20px;
+                padding: 10px;
+                box-sizing: border-box;
               \`;
 
               modal.innerHTML = \`
                 <div class="modal-content" style="
                   background: white;
-                  padding: 30px;
+                  padding: 20px;
                   border-radius: 12px;
                   max-width: 900px;
-                  width: 95%;
+                  width: 100%;
                   text-align: center;
-                  max-height: 90vh;
+                  max-height: 95vh;
                   overflow-y: auto;
+                  box-sizing: border-box;
+                  margin: auto;
                 ">
-                  <h3 style="margin-top: 0; color: #333;">🎨 选择导出选项</h3>
+                  <div style="position: relative; margin-bottom: 10px;">
+                    <h3 style="margin: 0; color: #333;">🎨 选择导出选项</h3>
+                    <button id="close-modal" style="
+                      position: absolute;
+                      top: -5px;
+                      right: -5px;
+                      width: 32px;
+                      height: 32px;
+                      border: none;
+                      background: #f0f0f0;
+                      border-radius: 50%;
+                      cursor: pointer;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      font-size: 18px;
+                      color: #666;
+                      transition: all 0.2s ease;
+                    " title="关闭" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">×</button>
+                  </div>
                   <p style="color: #666; margin-bottom: 25px;">选择图片格式和导出方式，右侧可实时预览效果</p>
 
                   <!-- 主要内容区域：左侧配置，右侧预览 -->
@@ -602,7 +633,7 @@ app.get('/', async (c) => {
                       <!-- 图片格式选择 -->
                       <div style="margin-bottom: 25px;">
                         <label style="display: block; margin-bottom: 10px; color: #333; font-weight: 600;">📷 图片格式</label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                        <div class="format-options-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                           <button class="format-option" data-format="png" style="
                             padding: 10px 6px;
                             border: 2px solid #667eea;
@@ -645,7 +676,7 @@ app.get('/', async (c) => {
                       <!-- JPEG 质量设置 -->
                       <div id="jpeg-quality" style="margin-bottom: 20px; display: none;">
                         <label style="display: block; margin-bottom: 5px; color: #333;">JPEG 质量：</label>
-                        <input type="range" id="quality-slider" min="0.1" max="1" step="0.1" value="0.9" style="width: 100%;">
+                        <input type="range" id="quality-slider" min="0.1" max="1" step="0.1" value="0.9" class="mobile-slider" style="width: 100%;">
                         <small style="color: #666;"><span id="quality-value">90</span>%</small>
                       </div>
 
@@ -656,7 +687,7 @@ app.get('/', async (c) => {
                         <!-- 背景选择 -->
                         <div style="margin-bottom: 15px;">
                           <!-- 渐变背景选项 -->
-                          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                          <div class="bg-options-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                             <button class="bg-option" data-bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="
                               padding: 6px;
                               border: 2px solid #e0e0e0;
@@ -689,7 +720,7 @@ app.get('/', async (c) => {
                             ">蓝青</button>
                           </div>
 
-                          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px;">
+                          <div class="bg-options-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px;">
                             <button class="bg-option" data-bg="linear-gradient(135deg, #fa709a 0%, #fee140 100%)" style="
                               padding: 6px;
                               border: 2px solid #e0e0e0;
@@ -726,7 +757,7 @@ app.get('/', async (c) => {
                         <!-- 内边距设置 -->
                         <div style="margin-bottom: 15px;">
                           <label style="display: block; margin-bottom: 5px; color: #333;">内边距：</label>
-                          <input type="range" id="padding-slider" min="0" max="100" value="40" style="width: 100%;">
+                          <input type="range" id="padding-slider" min="0" max="100" value="40" class="mobile-slider" style="width: 100%;">
                           <small style="color: #666;"><span id="padding-value">40</span>px</small>
                         </div>
                       </div>
@@ -735,7 +766,7 @@ app.get('/', async (c) => {
                     <!-- 右侧：实时预览 -->
                     <div style="text-align: center;">
                       <h4 style="margin-bottom: 15px; color: #333;">👀 实时预览</h4>
-                      <div style="
+                      <div class="preview-section" style="
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -763,24 +794,147 @@ app.get('/', async (c) => {
                     @media (max-width: 768px) {
                       #main-content {
                         grid-template-columns: 1fr !important;
-                        gap: 20px !important;
+                        gap: 15px !important;
                       }
                       .modal-content {
-                        max-width: 95% !important;
-                        padding: 20px !important;
+                        max-width: 100% !important;
+                        padding: 15px !important;
+                        margin: 5px !important;
+                        max-height: 98vh !important;
+                        border-radius: 8px !important;
+                      }
+                      .preview-section {
+                        min-height: 250px !important;
+                        padding: 15px !important;
+                      }
+                      .format-option, .bg-option {
+                        padding: 12px 8px !important;
+                        font-size: 12px !important;
+                        min-height: 44px !important;
+                      }
+                      .format-options-grid {
+                        gap: 10px !important;
+                      }
+                      .bg-options-grid {
+                        gap: 8px !important;
+                      }
+                      #close-modal {
+                        width: 36px !important;
+                        height: 36px !important;
+                        font-size: 20px !important;
+                        top: -8px !important;
+                        right: -8px !important;
+                      }
+                      .mobile-slider {
+                        height: 8px !important;
+                        -webkit-appearance: none !important;
+                        appearance: none !important;
+                        background: #ddd !important;
+                        border-radius: 4px !important;
+                        outline: none !important;
+                      }
+                      .mobile-slider::-webkit-slider-thumb {
+                        -webkit-appearance: none !important;
+                        appearance: none !important;
+                        width: 24px !important;
+                        height: 24px !important;
+                        border-radius: 50% !important;
+                        background: #667eea !important;
+                        cursor: pointer !important;
+                        border: 2px solid white !important;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+                      }
+                      .mobile-slider::-moz-range-thumb {
+                        width: 24px !important;
+                        height: 24px !important;
+                        border-radius: 50% !important;
+                        background: #667eea !important;
+                        cursor: pointer !important;
+                        border: 2px solid white !important;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
                       }
                     }
                     @media (max-width: 480px) {
                       .modal-content {
-                        padding: 15px !important;
+                        padding: 12px !important;
+                        margin: 2px !important;
+                        border-radius: 6px !important;
                       }
                       #main-content {
-                        gap: 15px !important;
+                        gap: 12px !important;
+                      }
+                      .preview-section {
+                        min-height: 200px !important;
+                        padding: 10px !important;
+                      }
+                      .modal-buttons {
+                        flex-direction: column !important;
+                        gap: 8px !important;
+                      }
+                      .modal-buttons button {
+                        width: 100% !important;
+                        padding: 14px 20px !important;
+                        font-size: 16px !important;
+                        min-height: 48px !important;
+                      }
+                      .format-option, .bg-option {
+                        padding: 14px 10px !important;
+                        font-size: 13px !important;
+                        min-height: 48px !important;
+                      }
+                      .format-options-grid {
+                        gap: 12px !important;
+                      }
+                      .bg-options-grid {
+                        gap: 10px !important;
+                      }
+                      #close-modal {
+                        width: 40px !important;
+                        height: 40px !important;
+                        font-size: 22px !important;
+                        top: -10px !important;
+                        right: -10px !important;
+                      }
+                      .mobile-slider {
+                        height: 10px !important;
+                      }
+                      .mobile-slider::-webkit-slider-thumb {
+                        width: 28px !important;
+                        height: 28px !important;
+                      }
+                      .mobile-slider::-moz-range-thumb {
+                        width: 28px !important;
+                        height: 28px !important;
+                      }
+                    }
+                    @media (max-width: 360px) {
+                      .modal-content {
+                        padding: 10px !important;
+                        margin: 1px !important;
+                      }
+                      #main-content {
+                        gap: 10px !important;
+                      }
+                      .mobile-slider {
+                        height: 12px !important;
+                      }
+                      .mobile-slider::-webkit-slider-thumb {
+                        width: 32px !important;
+                        height: 32px !important;
+                      }
+                      .mobile-slider::-moz-range-thumb {
+                        width: 32px !important;
+                        height: 32px !important;
+                      }
+                      .format-option, .bg-option {
+                        padding: 16px 12px !important;
+                        font-size: 14px !important;
+                        min-height: 52px !important;
                       }
                     }
                   </style>
 
-                  <div style="display: flex; gap: 10px; justify-content: center;">
+                  <div class="modal-buttons" style="display: flex; gap: 10px; justify-content: center;">
                     <button id="cancel-export" style="
                       padding: 12px 24px;
                       border: 1px solid #ccc;
@@ -866,13 +1020,39 @@ app.get('/', async (c) => {
 
                 // 计算预览容器的最大可用空间（响应式）
                 const isMobile = window.innerWidth <= 768;
-                const maxPreviewWidth = isMobile ? 280 : 350; // 预览区域最大宽度
-                const maxPreviewHeight = isMobile ? 300 : 400; // 预览区域最大高度
+                const isSmallMobile = window.innerWidth <= 480;
+                const isTinyMobile = window.innerWidth <= 360;
+
+                let maxPreviewWidth, maxPreviewHeight;
+                if (isTinyMobile) {
+                  maxPreviewWidth = Math.min(window.innerWidth - 40, 250);
+                  maxPreviewHeight = 180;
+                } else if (isSmallMobile) {
+                  maxPreviewWidth = Math.min(window.innerWidth - 50, 300);
+                  maxPreviewHeight = 220;
+                } else if (isMobile) {
+                  maxPreviewWidth = Math.min(window.innerWidth - 60, 320);
+                  maxPreviewHeight = 280;
+                } else {
+                  maxPreviewWidth = 350;
+                  maxPreviewHeight = 400;
+                }
 
                 // 计算缩放比例，保持宽高比
                 const scaleX = maxPreviewWidth / totalWidth;
                 const scaleY = maxPreviewHeight / totalHeight;
-                const scale = Math.min(scaleX, scaleY, 0.8); // 最大缩放到80%
+                let maxScale = 0.8; // 默认最大缩放到80%
+
+                // 在移动设备上允许更大的缩放比例以更好地利用空间
+                if (isTinyMobile) {
+                  maxScale = 1.0;
+                } else if (isSmallMobile) {
+                  maxScale = 0.95;
+                } else if (isMobile) {
+                  maxScale = 0.9;
+                }
+
+                const scale = Math.min(scaleX, scaleY, maxScale);
 
                 // 应用缩放和尺寸
                 const scaledWidth = totalWidth * scale;
@@ -1022,6 +1202,12 @@ app.get('/', async (c) => {
 
               // 取消按钮
               modal.querySelector('#cancel-export').onclick = () => {
+                document.body.removeChild(modal);
+                resolve(null);
+              };
+
+              // 关闭按钮
+              modal.querySelector('#close-modal').onclick = () => {
                 document.body.removeChild(modal);
                 resolve(null);
               };

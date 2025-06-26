@@ -107,18 +107,24 @@ body {
 
 .search-btn {
   padding: 14px 28px;
-  background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
   color: white;
   border: none;
   border-radius: 16px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.5);
   white-space: nowrap;
-  box-shadow: 0 4px 15px rgba(33, 147, 176, 0.3);
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .search-btn::before {
@@ -129,16 +135,52 @@ body {
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
+  transition: left 0.6s ease;
 }
 
 .search-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(33, 147, 176, 0.4);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 35px rgba(6, 182, 212, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
 }
 
 .search-btn:hover::before {
   left: 100%;
+}
+
+.search-btn:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow: 0 6px 25px rgba(6, 182, 212, 0.5);
+}
+
+.search-btn .btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.search-btn:hover .btn-icon {
+  transform: scale(1.1);
+  animation: sparkle 1s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.3) drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+  }
+}
+
+.search-btn .btn-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
 }
 
 /* 错误信息 - 统一圆角 */
@@ -280,63 +322,51 @@ body {
   justify-content: center;
   align-items: center;
   gap: 40px;
-  margin-bottom: 20px;
-  padding: 10px 0;
+  margin: 20px 0;
+  padding: 0;
 }
 
 .stat-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
   gap: 8px;
+  text-align: left;
 }
 
 .stat-icon {
-  font-size: 1.2rem;
-  color: #2193b0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: rgba(33, 147, 176, 0.1);
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  width: 20px;
+  height: 20px;
 }
 
 .stat-icon svg {
   width: 20px;
   height: 20px;
   stroke: currentColor;
+  stroke-width: 2;
 }
 
-/* 为不同类型的统计项设置不同的颜色 */
+/* Stars - 金色 */
 .stat-item:nth-child(1) .stat-icon {
-  color: #f39c12;
-  background: rgba(243, 156, 18, 0.1);
+  color: #ffd700;
 }
 
+/* Forks - 绿色 */
 .stat-item:nth-child(2) .stat-icon {
-  color: #2ecc71;  
-  background: rgba(46, 204, 113, 0.1);
+  color: #56d364;
 }
 
+/* Watchers - 蓝色 */
 .stat-item:nth-child(3) .stat-icon {
-  color: #3498db;
-  background: rgba(52, 152, 219, 0.1);
-}
-
-/* 鼠标悬停效果 */
-.stat-item:hover .stat-icon {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: #4dabf7;
 }
 
 .stat-value {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 /* 额外信息行 */
@@ -595,6 +625,12 @@ body {
     width: 100%;
     padding: 12px 24px;
     font-size: 0.95rem;
+    gap: 6px;
+  }
+  
+  .search-btn .btn-icon svg {
+    width: 16px;
+    height: 16px;
   }
   
   .examples {
@@ -658,21 +694,27 @@ body {
     line-height: 1.4;
   }
   
-  .card-stats {
-    gap: 20px;
-    padding: 8px 0;
-    margin-bottom: 16px;
+    .card-stats {
+    flex-wrap: wrap;
+    gap: 25px;
+    margin: 16px 0;
+    justify-content: center;
   }
-  
+
+  .stat-item {
+    gap: 6px;
+  }
+
   .stat-value {
-    font-size: 1.1rem;
+    font-size: 1rem;
+    font-weight: 600;
   }
-  
+
   .stat-icon {
-    width: 28px;
-    height: 28px;
+    width: 18px;
+    height: 18px;
   }
-  
+
   .stat-icon svg {
     width: 18px;
     height: 18px;
@@ -756,15 +798,33 @@ body {
     font-size: 0.8rem;
   }
   
-  .card-stats {
-    flex-wrap: wrap;
-    gap: 15px;
+    .card-stats {
     justify-content: center;
+    gap: 20px;
+    margin: 16px 0;
+  }
+
+  .stat-item {
+    gap: 5px;
+  }
+
+  .stat-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .stat-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .stat-value {
+    font-size: 0.9rem;
   }
   
-  .stat-item {
-    flex: 1;
-    min-width: 80px;
+  .search-btn .btn-icon svg {
+    width: 14px;
+    height: 14px;
   }
   
   .card-extra-info {
