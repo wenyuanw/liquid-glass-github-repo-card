@@ -5,32 +5,45 @@ declare module 'hono' {
   interface ContextRenderer {
     (
       content: string | Promise<string>,
-      props?: { title: string }
+      props?: { title?: string; ogImage?: string; ogUrl?: string; description?: string }
     ): Response
   }
 }
 
-export const renderer = jsxRenderer(({ children, title }): any => {
+export const renderer = jsxRenderer(({ children, title, ogImage, ogUrl, description }): any => {
   const pageTitle = title ? `${title} - GitHub 项目卡片生成器` : 'GitHub 项目卡片生成器'
-  
+  const pageDescription = description || "一个精美的 GitHub 项目卡片生成器，支持生成、下载和分享精美的项目展示卡片，让您的项目更加引人注目"
+  const currentUrl = ogUrl || "https://card.wenyuan.news" // 替换为你的实际域名
+
   return (
     <html lang="zh-CN">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <title>{pageTitle}</title>
-        <meta name="description" content="一个精美的 GitHub 项目卡片生成器，支持生成、下载和分享精美的项目展示卡片，让您的项目更加引人注目" />
+        <meta name="description" content={pageDescription} />
         <meta name="keywords" content="GitHub, 项目卡片, 卡片生成器, 项目展示, 开源项目, 代码仓库, 项目宣传" />
-        <meta name="author" content="GitHub Card Generator" />
-        
+        <meta name="author" content="liquid-glass-github-repo-card" />
+
         {/* Open Graph 标签 */}
         <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content="生成精美的 GitHub 项目展示卡片，支持下载和分享" />
+        <meta property="og:description" content={pageDescription} />
         <meta property="og:type" content="website" />
-        
+        <meta property="og:url" content={currentUrl} />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
+        {ogImage && <meta property="og:image:type" content="image/svg+xml" />}
+
+        {/* Twitter Card 标签 */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
+
         {/* Favicon */}
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-        
+
         <ViteClient />
         <Link href="/src/style.css" rel="stylesheet" />
       </head>

@@ -6,6 +6,377 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 
 app.use(renderer)
 
+// OG 图片生成路由
+app.get('/og-image/:owner/:repo', async (c) => {
+  const { owner, repo } = c.req.param()
+
+  try {
+    // 准备API请求头
+    const headers: Record<string, string> = {
+      'Accept': 'application/vnd.github+json',
+      'User-Agent': 'liquid-glass-github-repo-card/1.0 (+https://github.com/wenyuanw/liquid-glass-github-repo-card)',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }
+
+    // 如果有GitHub Token，添加认证头
+    const token = c.env?.GITHUB_TOKEN
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    // 获取项目信息
+    const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers,
+      method: 'GET'
+    })
+
+    if (!repoResponse.ok) {
+      // 如果获取失败，返回默认 OG 图片
+      const defaultOgSvg = generateDefaultOGImage()
+      c.header('Content-Type', 'image/svg+xml')
+      c.header('Cache-Control', 'public, max-age=3600')
+      return c.body(defaultOgSvg)
+    }
+
+    const repoData = await repoResponse.json() as GitHubRepoData
+
+    // 生成 SVG OG 图片
+    const ogSvg = generateOGImage(repoData)
+
+    // 设置响应头
+    c.header('Content-Type', 'image/svg+xml')
+    c.header('Cache-Control', 'public, max-age=3600') // 缓存1小时
+
+    return c.body(ogSvg)
+  } catch (error) {
+    console.error('生成 OG 图片失败:', error)
+    // 返回默认图片
+    const defaultOgSvg = generateDefaultOGImage()
+    c.header('Content-Type', 'image/svg+xml')
+    c.header('Cache-Control', 'public, max-age=3600')
+    return c.body(defaultOgSvg)
+  }
+})
+
+// 生成 OG 图片的函数
+function generateOGImage(repoData: GitHubRepoData): string {
+  const width = 1200
+  const height = 630
+
+  // 截断描述文本
+  const description = repoData.description || '这是一个很棒的 GitHub 项目'
+  const truncatedDescription = description.length > 80 ? description.substring(0, 77) + '...' : description
+
+  // 格式化数字
+  const formatNumber = (num: number) => {
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'k'
+    }
+    return num.toString()
+  }
+
+  return `
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 动态渐变背景 - 匹配原始样式 -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ee7752;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#e73c7e;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#23a6d5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#23d5ab;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- 液体玻璃效果背景 -->
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.25);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.15);stop-opacity:1" />
+    </linearGradient>
+
+    <!-- 玻璃光泽效果 -->
+    <linearGradient id="shineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.5);stop-opacity:1" />
+      <stop offset="50%" style="stop-color:rgba(255,255,255,0.1);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.3);stop-opacity:1" />
+    </linearGradient>
+
+    <!-- 阴影滤镜 -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="rgba(0,0,0,0.08)"/>
+    </filter>
+
+    <!-- 模糊滤镜 -->
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+
+    <!-- 头像遮罩 -->
+    <clipPath id="avatarClip">
+      <circle cx="60" cy="60" r="30"/>
+    </clipPath>
+  </defs>
+
+  <!-- 动态渐变背景 -->
+  <rect width="${width}" height="${height}" fill="url(#bgGradient)"/>
+
+  <!-- 装饰性几何图形 - 模拟动画效果 -->
+  <circle cx="1050" cy="150" r="120" fill="rgba(255,255,255,0.08)" filter="url(#blur)"/>
+  <circle cx="150" cy="480" r="80" fill="rgba(255,255,255,0.05)" filter="url(#blur)"/>
+  <circle cx="950" cy="500" r="60" fill="rgba(255,255,255,0.06)" filter="url(#blur)"/>
+
+  <!-- 主卡片 - 液体玻璃效果，更大的尺寸 -->
+  <rect x="80" y="80" width="1040" height="470" rx="16" ry="16"
+        fill="url(#glassGradient)" filter="url(#shadow)"
+        stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+
+  <!-- 玻璃光泽层 -->
+  <rect x="80" y="80" width="1040" height="470" rx="16" ry="16"
+        fill="url(#shineGradient)" opacity="0.6"/>
+
+  <!-- 内容区域 -->
+  <g transform="translate(120, 120)">
+
+    <!-- 头像区域 - 更大的头像 -->
+    <g transform="translate(0, 30)">
+      <!-- 头像背景圆 -->
+      <circle cx="80" cy="80" r="43" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
+
+      <!-- 头像占位符 -->
+      <circle cx="80" cy="80" r="40" fill="rgba(255,255,255,0.9)"/>
+      <text x="80" y="90" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="28" font-weight="bold">
+        ${repoData.owner.login.charAt(0).toUpperCase()}
+      </text>
+    </g>
+
+    <!-- 项目信息 -->
+    <g transform="translate(200, 30)">
+      <!-- 项目名称 - 更大的字体 -->
+      <text x="0" y="50" fill="white" font-family="Arial, sans-serif" font-size="42" font-weight="700"
+            text-shadow="0 4px 12px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3)">
+        ${repoData.full_name}
+      </text>
+
+      <!-- 项目描述 - 更大的字体 -->
+      <text x="0" y="90" fill="rgba(255,255,255,0.95)" font-family="Arial, sans-serif" font-size="20"
+            text-shadow="0 2px 4px rgba(0,0,0,0.2)">
+        ${truncatedDescription}
+      </text>
+    </g>
+
+    <!-- 统计信息 - 更大的间距和字体 -->
+    <g transform="translate(200, 180)">
+
+      <!-- Stars -->
+      <g transform="translate(0, 0)">
+        <!-- Star 图标 - 更大 -->
+        <polygon points="15,3 18.09,11.26 27,12.27 21,18.14 22.18,27.02 15,22.77 7.82,27.02 9,18.14 3,12.27 11.91,11.26"
+                 fill="#ffd700" stroke="#ffa500" stroke-width="1.5"/>
+        <text x="40" y="20" fill="white" font-family="Arial, sans-serif" font-size="20" font-weight="600"
+              text-shadow="0 2px 4px rgba(0,0,0,0.3)">
+          ${formatNumber(repoData.stargazers_count)}
+        </text>
+      </g>
+
+      <!-- Forks -->
+      <g transform="translate(200, 0)">
+        <!-- Fork 图标 - 更大 -->
+        <circle cx="8" cy="8" r="4" fill="none" stroke="#56d364" stroke-width="2.5"/>
+        <circle cx="22" cy="22" r="4" fill="none" stroke="#56d364" stroke-width="2.5"/>
+        <path d="M8 26V12a12 12 0 0 0 12 12" fill="none" stroke="#56d364" stroke-width="2.5"/>
+        <text x="40" y="20" fill="white" font-family="Arial, sans-serif" font-size="20" font-weight="600"
+              text-shadow="0 2px 4px rgba(0,0,0,0.3)">
+          ${formatNumber(repoData.forks_count)}
+        </text>
+      </g>
+
+      <!-- Watchers -->
+      <g transform="translate(400, 0)">
+        <!-- Eye 图标 - 更大 -->
+        <path d="M2 15s5-10 13-10 13 10 13 10-5 10-13 10-13-10-13-10z" fill="none" stroke="#4dabf7" stroke-width="2.5"/>
+        <circle cx="15" cy="15" r="4" fill="none" stroke="#4dabf7" stroke-width="2.5"/>
+        <text x="40" y="20" fill="white" font-family="Arial, sans-serif" font-size="20" font-weight="600"
+              text-shadow="0 2px 4px rgba(0,0,0,0.3)">
+          ${formatNumber(repoData.watchers_count)}
+        </text>
+      </g>
+
+    </g>
+
+    <!-- 额外信息 -->
+    <g transform="translate(200, 260)">
+      <!-- 分隔线 -->
+      <line x1="0" y1="0" x2="600" y2="0" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+
+      ${repoData.language ? `
+      <!-- 编程语言 -->
+      <g transform="translate(0, 35)">
+        <polyline points="20,22 28,15 20,8" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+        <polyline points="10,8 2,15 10,22" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+        <text x="40" y="20" fill="rgba(255,255,255,0.9)" font-family="Arial, sans-serif" font-size="18" font-weight="500">
+          ${repoData.language}
+        </text>
+      </g>
+      ` : ''}
+
+      ${repoData.license ? `
+      <!-- 许可证 -->
+      <g transform="translate(280, 35)">
+        <path d="M17 3H8a2 2 0 0 0-2 2v20a2 2 0 0 0 2 2h15a2 2 0 0 0 2-2V9z" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+        <polyline points="17,3 17,10 24,10" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+        <text x="40" y="20" fill="rgba(255,255,255,0.9)" font-family="Arial, sans-serif" font-size="18" font-weight="500">
+          ${repoData.license.name}
+        </text>
+      </g>
+      ` : ''}
+    </g>
+
+  </g>
+
+  <!-- 底部品牌信息 -->
+  <text x="600" y="580" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Arial, sans-serif" font-size="14"
+        text-shadow="0 1px 2px rgba(0,0,0,0.2)">
+    Liquid Glass GitHub Repo Card - 液态玻璃风格 GitHub 卡片
+  </text>
+
+  <!-- GitHub 图标 -->
+  <g transform="translate(1120, 540)">
+    <circle cx="24" cy="24" r="28" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+          fill="white" transform="translate(12, 12) scale(1.5)" opacity="0.9"/>
+  </g>
+</svg>`.trim()
+}
+
+// 生成默认 OG 图片的函数
+function generateDefaultOGImage(): string {
+  const width = 1200
+  const height = 630
+
+  return `
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 动态渐变背景 - 匹配原始样式 -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ee7752;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#e73c7e;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#23a6d5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#23d5ab;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- 液体玻璃效果背景 -->
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.25);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.15);stop-opacity:1" />
+    </linearGradient>
+
+    <!-- 玻璃光泽效果 -->
+    <linearGradient id="shineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.5);stop-opacity:1" />
+      <stop offset="50%" style="stop-color:rgba(255,255,255,0.1);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.3);stop-opacity:1" />
+    </linearGradient>
+
+    <!-- 阴影滤镜 -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="rgba(0,0,0,0.08)"/>
+    </filter>
+
+    <!-- 模糊滤镜 -->
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <!-- 动态渐变背景 -->
+  <rect width="${width}" height="${height}" fill="url(#bgGradient)"/>
+
+  <!-- 装饰性几何图形 - 模拟动画效果 -->
+  <circle cx="1050" cy="150" r="120" fill="rgba(255,255,255,0.08)" filter="url(#blur)"/>
+  <circle cx="150" cy="480" r="80" fill="rgba(255,255,255,0.05)" filter="url(#blur)"/>
+  <circle cx="950" cy="500" r="60" fill="rgba(255,255,255,0.06)" filter="url(#blur)"/>
+
+  <!-- 主卡片 - 液体玻璃效果，更大的尺寸 -->
+  <rect x="80" y="80" width="1040" height="470" rx="16" ry="16"
+        fill="url(#glassGradient)" filter="url(#shadow)"
+        stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+
+  <!-- 玻璃光泽层 -->
+  <rect x="80" y="80" width="1040" height="470" rx="16" ry="16"
+        fill="url(#shineGradient)" opacity="0.6"/>
+
+  <!-- 内容区域 -->
+  <g transform="translate(600, 220)">
+
+    <!-- 主标题 - 更大的字体 -->
+    <text x="0" y="0" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="48" font-weight="700"
+          text-shadow="0 4px 12px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3)">
+      Liquid Glass GitHub Repo Card
+    </text>
+
+    <!-- 副标题 - 更大的字体 -->
+    <text x="0" y="60" text-anchor="middle" fill="rgba(255,255,255,0.95)" font-family="Arial, sans-serif" font-size="24"
+          text-shadow="0 2px 4px rgba(0,0,0,0.2)">
+      液态玻璃风格 • 精美展示卡片
+    </text>
+
+    <!-- 特性图标和文字 - 更大的布局 -->
+    <g transform="translate(0, 120)">
+
+      <!-- 下载图标 -->
+      <g transform="translate(-200, 0)">
+        <circle cx="0" cy="0" r="35" fill="rgba(46,204,113,0.3)" stroke="rgba(46,204,113,0.6)" stroke-width="3"/>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+              fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              transform="translate(-12, -12) scale(1.2)"/>
+        <text x="0" y="60" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-family="Arial, sans-serif" font-size="18" font-weight="600"
+              text-shadow="0 1px 2px rgba(0,0,0,0.2)">
+          支持下载
+        </text>
+      </g>
+
+      <!-- 分享图标 -->
+      <g transform="translate(0, 0)">
+        <circle cx="0" cy="0" r="35" fill="rgba(243,156,18,0.3)" stroke="rgba(243,156,18,0.6)" stroke-width="3"/>
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+              fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              transform="translate(-12, -12) scale(1.2)"/>
+        <text x="0" y="60" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-family="Arial, sans-serif" font-size="18" font-weight="600"
+              text-shadow="0 1px 2px rgba(0,0,0,0.2)">
+          支持分享
+        </text>
+      </g>
+
+      <!-- 预览图标 -->
+      <g transform="translate(200, 0)">
+        <circle cx="0" cy="0" r="35" fill="rgba(52,152,219,0.3)" stroke="rgba(52,152,219,0.6)" stroke-width="3"/>
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+              fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              transform="translate(-12, -12) scale(1.2)"/>
+        <circle cx="0" cy="0" r="3" fill="none" stroke="white" stroke-width="2.5"/>
+        <text x="0" y="60" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-family="Arial, sans-serif" font-size="18" font-weight="600"
+              text-shadow="0 1px 2px rgba(0,0,0,0.2)">
+          实时预览
+        </text>
+      </g>
+
+    </g>
+
+  </g>
+
+  <!-- 底部品牌信息 -->
+  <text x="600" y="580" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Arial, sans-serif" font-size="16"
+        text-shadow="0 1px 2px rgba(0,0,0,0.2)">
+    Liquid Glass GitHub Repo Card - 让您的项目更加引人注目
+  </text>
+
+  <!-- GitHub 图标 -->
+  <g transform="translate(1120, 540)">
+    <circle cx="24" cy="24" r="28" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+          fill="white" transform="translate(12, 12) scale(1.5)" opacity="0.9"/>
+  </g>
+</svg>`.trim()
+}
+
 // 首页 - 项目卡片生成器
 app.get('/', async (c) => {
   const url = c.req.query('q') || 'wenyuanw/quick-prompt'
@@ -35,41 +406,91 @@ app.get('/', async (c) => {
 
       // 准备API请求头
       const headers: Record<string, string> = {
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'GitHub-Card-Generator/1.0'
-      }
-      
-      // 如果有GitHub Token，添加认证头（可选）
-      const token = c.env?.GITHUB_TOKEN
-      if (token) {
-        headers['Authorization'] = `token ${token}`
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'liquid-glass-github-repo-card/1.0 (+https://github.com/wenyuanw/liquid-glass-github-repo-card)',
+        'X-GitHub-Api-Version': '2022-11-28'
       }
 
+      // 如果有GitHub Token，添加认证头（推荐）
+      const token = c.env?.GITHUB_TOKEN
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      console.log('请求头信息:', headers)
+      console.log('请求URL:', `https://api.github.com/repos/${owner}/${repo}`)
+
       // 获取项目信息
-      const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers })
+      const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+        headers,
+        method: 'GET'
+      })
+
+      console.log('repoResponse:', repoResponse)
+      console.log('响应状态:', repoResponse.status, repoResponse.statusText)
+      console.log('速率限制信息:', {
+        limit: repoResponse.headers.get('X-RateLimit-Limit'),
+        remaining: repoResponse.headers.get('X-RateLimit-Remaining'),
+        reset: repoResponse.headers.get('X-RateLimit-Reset'),
+        used: repoResponse.headers.get('X-RateLimit-Used')
+      })
 
       if (!repoResponse.ok) {
         let errorMessage = '项目不存在或无法访问'
-        
+
         if (repoResponse.status === 403) {
           const rateLimitRemaining = repoResponse.headers.get('X-RateLimit-Remaining')
+          const rateLimitReset = repoResponse.headers.get('X-RateLimit-Reset')
+
           if (rateLimitRemaining === '0') {
-            errorMessage = 'GitHub API 请求次数已达上限，请稍后再试'
+            const resetTime = rateLimitReset ? new Date(parseInt(rateLimitReset) * 1000).toLocaleTimeString() : '未知'
+            errorMessage = `GitHub API 请求次数已达上限，请在 ${resetTime} 后再试`
           } else {
-            errorMessage = '访问被拒绝，可能是私有仓库或需要认证'
+            // 检查是否有认证token
+            if (!token) {
+              errorMessage = '访问被拒绝：建议配置 GitHub Token 以提高请求限制'
+            } else {
+              errorMessage = '访问被拒绝：可能是私有仓库或 Token 权限不足'
+            }
           }
         } else if (repoResponse.status === 404) {
           errorMessage = '项目不存在，请检查项目名称是否正确'
+        } else if (repoResponse.status === 401) {
+          errorMessage = 'GitHub Token 无效或已过期'
         } else if (repoResponse.status >= 500) {
           errorMessage = 'GitHub 服务器暂时不可用，请稍后再试'
         }
-        
+
+        // 添加更多调试信息
+        console.error('GitHub API 错误:', {
+          status: repoResponse.status,
+          statusText: repoResponse.statusText,
+          url: `https://api.github.com/repos/${owner}/${repo}`,
+          hasToken: !!token
+        })
+
         throw new Error(errorMessage)
       }
       repoData = await repoResponse.json() as GitHubRepoData
     } catch (e) {
       error = e instanceof Error ? e.message : '获取项目信息时出现错误'
     }
+  }
+
+  // 准备 OG 图片和页面信息
+  let ogImage: string | undefined
+  let pageTitle: string | undefined
+  let pageDescription: string | undefined
+  let pageUrl: string | undefined
+
+  if (repoData) {
+    // 从 full_name 中提取仓库名称
+    const repoName = repoData.full_name.split('/')[1]
+    // 构建 OG 图片 URL
+    ogImage = `${new URL(c.req.url).origin}/og-image/${repoData.owner.login}/${repoName}`
+    pageTitle = `${repoData.full_name} - GitHub 项目卡片`
+    pageDescription = repoData.description || `查看 ${repoData.full_name} 的项目信息和统计数据`
+    pageUrl = `${new URL(c.req.url).origin}/?q=${encodeURIComponent(repoData.full_name)}`
   }
 
   return c.render(
@@ -1317,7 +1738,13 @@ app.get('/', async (c) => {
           }
         `
       }} />
-    </div>
+    </div>,
+    {
+      ...(pageTitle && { title: pageTitle }),
+      ...(ogImage && { ogImage: ogImage }),
+      ...(pageUrl && { ogUrl: pageUrl }),
+      ...(pageDescription && { description: pageDescription })
+    }
   )
 })
 
