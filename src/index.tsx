@@ -253,12 +253,12 @@ app.get('/', async (c) => {
             }
           });
 
-          // 创建导出容器函数 - 重新实现
+          // 创建导出容器函数 - 修复padding问题
           async function createExportContainer(originalCard, options) {
             // 获取原始卡片的尺寸
             const cardRect = originalCard.getBoundingClientRect();
 
-            // 创建导出容器
+            // 创建导出容器 - 修复尺寸计算
             const container = document.createElement('div');
             container.style.cssText = \`
               position: absolute;
@@ -267,26 +267,47 @@ app.get('/', async (c) => {
               z-index: -1;
               width: \${cardRect.width + options.padding * 2}px;
               height: \${cardRect.height + options.padding * 2}px;
-              padding: \${options.padding}px;
               background: \${options.backgroundColor};
-              box-sizing: border-box; 
+              box-sizing: content-box;
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 0;
+              margin: 0;
+            \`;
+
+            // 创建内部包装器来处理padding
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = \`
+              width: \${cardRect.width}px;
+              height: \${cardRect.height}px;
+              margin: \${options.padding}px;
+              padding: 0;
+              box-sizing: content-box;
+              position: relative;
             \`;
 
             // 创建卡片的HTML副本，而不是克隆DOM节点
             const cardHTML = originalCard.outerHTML;
-            container.innerHTML = cardHTML;
+            wrapper.innerHTML = cardHTML;
 
             // 获取容器中的卡片元素
-            const cardInContainer = container.querySelector('#github-card');
+            const cardInContainer = wrapper.querySelector('#github-card');
             if (cardInContainer) {
-              // 重置卡片的定位样式
+              // 重置卡片的定位样式，确保完全填充wrapper
               cardInContainer.style.position = 'relative';
               cardInContainer.style.top = 'auto';
               cardInContainer.style.left = 'auto';
               cardInContainer.style.margin = '0';
               cardInContainer.style.transform = 'none';
+              cardInContainer.style.width = '100%';
+              cardInContainer.style.height = '100%';
+              cardInContainer.style.boxSizing = 'border-box';
             }
+
+            // 将wrapper添加到container中
+            container.appendChild(wrapper);
 
             return container;
           }
@@ -440,17 +461,20 @@ app.get('/', async (c) => {
               // 更新 loading 消息
               updateGlobalLoadingMessage('配置导出参数...');
 
-              // 配置 html-to-image 选项
+              // 配置 html-to-image 选项 - 修复尺寸计算
+              const containerRect = exportContainer.getBoundingClientRect();
               const options = {
                 quality: exportOptions.format === 'jpeg' ? (exportOptions.quality || 0.9) : 1.0,
                 pixelRatio: 2,
                 backgroundColor: null, // 让容器自己处理背景
-                width: exportContainer.offsetWidth,
-                height: exportContainer.offsetHeight,
+                width: containerRect.width,
+                height: containerRect.height,
                 style: {
                   transform: 'scale(1)',
                   transformOrigin: 'top left',
-                  position: 'relative'
+                  position: 'relative',
+                  margin: '0',
+                  padding: '0'
                 },
                 useCORS: true,
                 allowTaint: true,
@@ -868,10 +892,10 @@ app.get('/', async (c) => {
 
                 // 更新预览卡片的缩放
                 const clonedCard = previewCard.querySelector('#preview-github-card');
-                if (clonedCard) {
+                  if (clonedCard) {
                   clonedCard.style.transform = \`scale(\${scale})\`;
                   clonedCard.style.transformOrigin = 'top left';
-                  clonedCard.style.position = 'relative';
+                    clonedCard.style.position = 'relative';
                 }
 
                 // 重置预览卡片容器的transform
