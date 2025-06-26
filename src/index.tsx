@@ -197,7 +197,7 @@ app.get('/', async (c) => {
                 )}
               </div>
             </div>
-          </div>  
+          </div>
 
           <div class="card-actions" onclick="event.stopPropagation()">
             <button onclick="downloadCard(); event.stopPropagation();" class="action-btn download-btn">
@@ -238,187 +238,294 @@ app.get('/', async (c) => {
         </a>
       )}
 
+      <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js"></script>
       <script dangerouslySetInnerHTML={{
         __html: `
-          // 方案1：使用 Screen Capture API 截图导出（保留完整效果 + 智能裁切）
-          async function downloadCardByScreenshot() {
+          // html-to-image is now available globally as htmlToImage
+
+          // 检查库是否正确加载
+          window.addEventListener('load', () => {
+            if (typeof htmlToImage !== 'undefined') {
+              console.log('✅ html-to-image 库加载成功');
+              console.log('可用方法:', Object.keys(htmlToImage));
+            } else {
+              console.error('❌ html-to-image 库加载失败');
+            }
+          });
+
+          // 创建导出容器函数 - 重新实现
+          async function createExportContainer(originalCard, options) {
+            // 获取原始卡片的尺寸
+            const cardRect = originalCard.getBoundingClientRect();
+
+            // 创建导出容器
+            const container = document.createElement('div');
+            container.style.cssText = \`
+              position: absolute;
+              top: 0;
+              left: 0;
+              z-index: -1;
+              width: \${cardRect.width + options.padding * 2}px;
+              height: \${cardRect.height + options.padding * 2}px;
+              padding: \${options.padding}px;
+              background: \${options.backgroundColor};
+              box-sizing: border-box; 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            \`;
+
+            // 创建卡片的HTML副本，而不是克隆DOM节点
+            const cardHTML = originalCard.outerHTML;
+            container.innerHTML = cardHTML;
+
+            // 获取容器中的卡片元素
+            const cardInContainer = container.querySelector('#github-card');
+            if (cardInContainer) {
+              // 重置卡片的定位样式
+              cardInContainer.style.position = 'relative';
+              cardInContainer.style.top = 'auto';
+              cardInContainer.style.left = 'auto';
+              cardInContainer.style.margin = '0';
+              cardInContainer.style.transform = 'none';
+            }
+
+            return container;
+          }
+
+          // 等待图片加载完成
+          async function waitForImages(container) {
+            const images = container.querySelectorAll('img');
+            const imagePromises = Array.from(images).map(img => {
+              if (img.complete && img.naturalHeight !== 0) {
+                return Promise.resolve();
+              }
+              return new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve; // 即使图片加载失败也继续
+                // 设置超时，避免无限等待
+                setTimeout(resolve, 2000);
+              });
+            });
+
+            await Promise.all(imagePromises);
+          }
+
+          // 全局 loading 管理
+          function showGlobalLoading(message = '处理中...') {
+            // 移除已存在的 loading
+            hideGlobalLoading();
+
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'global-loading-overlay';
+            loadingOverlay.style.cssText = \`
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background: rgba(0, 0, 0, 0.7);
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              z-index: 99999;
+              backdrop-filter: blur(5px);
+              opacity: 0;
+              transition: opacity 0.3s ease;
+            \`;
+
+            loadingOverlay.innerHTML = \`
+              <div style="
+                background: rgba(255, 255, 255, 0.95);
+                padding: 40px;
+                border-radius: 16px;
+                text-align: center;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                max-width: 300px;
+                width: 90%;
+              ">
+                <div style="
+                  width: 50px;
+                  height: 50px;
+                  border: 4px solid #f3f3f3;
+                  border-top: 4px solid #667eea;
+                  border-radius: 50%;
+                  animation: globalSpin 1s linear infinite;
+                  margin: 0 auto 20px;
+                "></div>
+                <div style="
+                  color: #333;
+                  font-size: 16px;
+                  font-weight: 500;
+                  margin-bottom: 8px;
+                " id="global-loading-message">\${message}</div>
+                <div style="
+                  color: #666;
+                  font-size: 14px;
+                  line-height: 1.4;
+                ">请稍候，正在处理您的请求...</div>
+              </div>
+            \`;
+
+            document.body.appendChild(loadingOverlay);
+
+            // 触发动画
+            setTimeout(() => {
+              loadingOverlay.style.opacity = '1';
+            }, 10);
+
+            return loadingOverlay;
+          }
+
+          function updateGlobalLoadingMessage(message) {
+            const messageElement = document.getElementById('global-loading-message');
+            if (messageElement) {
+              messageElement.textContent = message;
+            }
+          }
+
+          function hideGlobalLoading() {
+            const existingOverlay = document.getElementById('global-loading-overlay');
+            if (existingOverlay) {
+              existingOverlay.style.opacity = '0';
+              setTimeout(() => {
+                if (existingOverlay.parentNode) {
+                  existingOverlay.parentNode.removeChild(existingOverlay);
+                }
+              }, 300);
+            }
+          }
+
+          // 使用 html-to-image 库导出
+          async function downloadCardByHtmlToImage() {
             const card = document.getElementById('github-card');
             const downloadBtn = document.querySelector('.download-btn');
-            
-            // 显示加载状态
+
+            // 显示按钮加载状态
             const originalText = downloadBtn.innerHTML;
-            downloadBtn.innerHTML = '<span class="btn-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg></span>准备截图...';
+            downloadBtn.innerHTML = '<span class="btn-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg></span>准备导出...';
             downloadBtn.disabled = true;
-            
-            // 提供多种导出选项
-            const exportOptions = await showExportOptions();
-            if (!exportOptions) {
-              downloadBtn.innerHTML = originalText;
-              downloadBtn.disabled = false;
-              return;
-            }
-            
+
             try {
-              // 检查浏览器是否支持 Screen Capture API
-              if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-                throw new Error('您的浏览器不支持屏幕截图功能，将使用备用方案');
+              // 提供导出选项
+              const exportOptions = await showExportOptions();
+              if (!exportOptions) {
+                downloadBtn.innerHTML = originalText;
+                downloadBtn.disabled = false;
+                return;
               }
-              
-              // 滚动到卡片位置，确保完全可见
-              card.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-              await new Promise(resolve => setTimeout(resolve, 500)); // 等待滚动完成
-              
-              // 获取卡片的精确位置和尺寸
-              const cardRect = card.getBoundingClientRect();
-              const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-              const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-              
-              // 计算卡片在整个页面中的绝对位置
-              const cardPosition = {
-                x: cardRect.left + scrollX,
-                y: cardRect.top + scrollY,
-                width: cardRect.width,
-                height: cardRect.height
-              };
-              
-              // 添加临时的视觉标记（隐藏的，用于辅助定位）
-              const marker = document.createElement('div');
-              marker.id = 'screenshot-marker';
-              marker.style.cssText = \`
-                position: absolute;
-                top: \${cardPosition.y}px;
-                left: \${cardPosition.x}px;
-                width: \${cardPosition.width}px;
-                height: \${cardPosition.height}px;
-                border: 2px solid transparent;
-                z-index: 99999;
-                pointer-events: none;
-              \`;
-              document.body.appendChild(marker);
-              
-              // 创建详细的指导说明
-              const instructionModal = document.createElement('div');
-              instructionModal.style.cssText = \`
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(0, 0, 0, 0.9);
-                color: white;
-                padding: 20px;
-                border-radius: 12px;
-                z-index: 10000;
-                max-width: 400px;
-                text-align: center;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-              \`;
-              instructionModal.innerHTML = \`
-                <h3 style="margin-top: 0;">📸 截图指导</h3>
-                <p>即将弹出截图选择窗口，请按以下步骤操作：</p>
-                <div style="text-align: left; margin: 15px 0;">
-                  <p>选择窗口-当前的浏览器窗口</p>
-                </div>
-                <button id="start-capture" style="
-                  background: #667eea;
-                  color: white;
-                  border: none;
-                  padding: 10px 20px;
-                  border-radius: 6px;
-                  cursor: pointer;
-                  margin: 5px;
-                ">开始截图</button>
-                <button id="cancel-capture" style="
-                  background: #666;
-                  color: white;
-                  border: none;
-                  padding: 10px 20px;
-                  border-radius: 6px;
-                  cursor: pointer;
-                  margin: 5px;
-                ">取消</button>
-              \`;
-              document.body.appendChild(instructionModal);
-              
-              // 等待用户选择
-              const userChoice = await new Promise((resolve) => {
-                document.getElementById('start-capture').onclick = () => resolve(true);
-                document.getElementById('cancel-capture').onclick = () => resolve(false);
-              });
-              
-              document.body.removeChild(instructionModal);
-              
-              if (!userChoice) {
-                throw new Error('用户取消了截图操作');
-              }
-              
-              // 启动屏幕截图 - 优化参数以显示更多选项
-              const stream = await navigator.mediaDevices.getDisplayMedia({
-                video: {
-                  displaySurface: 'browser',  // 优先显示浏览器标签页选项
-                  width: { ideal: 1920, max: 1920 },
-                  height: { ideal: 1080, max: 1080 },
-                  frameRate: { ideal: 30, max: 30 }
+
+              // 显示全局 loading
+              showGlobalLoading('准备导出图片...');
+
+              downloadBtn.innerHTML = '<span class="btn-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg></span>生成图片中...';
+
+              // 更新 loading 消息
+              updateGlobalLoadingMessage('创建导出容器...');
+
+              // 创建导出容器
+              const exportContainer = await createExportContainer(card, exportOptions);
+
+              // 将容器临时添加到页面中进行渲染
+              document.body.appendChild(exportContainer);
+
+              // 更新 loading 消息
+              updateGlobalLoadingMessage('等待图片加载...');
+
+              // 等待图片加载和样式应用
+              await waitForImages(exportContainer);
+              await new Promise(resolve => setTimeout(resolve, 100)); // 额外等待时间确保渲染完成
+
+              // 更新 loading 消息
+              updateGlobalLoadingMessage('配置导出参数...');
+
+              // 配置 html-to-image 选项
+              const options = {
+                quality: exportOptions.format === 'jpeg' ? (exportOptions.quality || 0.9) : 1.0,
+                pixelRatio: 2,
+                backgroundColor: null, // 让容器自己处理背景
+                width: exportContainer.offsetWidth,
+                height: exportContainer.offsetHeight,
+                style: {
+                  transform: 'scale(1)',
+                  transformOrigin: 'top left',
+                  position: 'relative'
                 },
-                audio: false  // 不需要音频
-              });
-              
-              // 创建视频元素
-              const video = document.createElement('video');
-              video.srcObject = stream;
-              video.play();
-              
-              // 等待视频准备就绪
-              await new Promise((resolve) => {
-                video.onloadedmetadata = resolve;
-              });
-              
-              downloadBtn.innerHTML = '<span class="btn-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg></span>处理中...';
-              
-              // 创建完整的截图 canvas
-              const fullCanvas = document.createElement('canvas');
-              const fullCtx = fullCanvas.getContext('2d');
-              fullCanvas.width = video.videoWidth;
-              fullCanvas.height = video.videoHeight;
-              
-              // 绘制完整的视频帧
-              fullCtx.drawImage(video, 0, 0);
-              
-              // 停止录制
-              stream.getTracks().forEach(track => track.stop());
-              
-              // 移除标记元素
-              document.body.removeChild(marker);
-              
-              let finalCanvas;
+                useCORS: true,
+                allowTaint: true,
+                skipFonts: false,
+                cacheBust: true,
+                // 包含所有CSS样式
+                includeQueryParams: true
+              };
+
+              let dataUrl;
               const repoName = document.querySelector('.repo-name').textContent.replace('/', '-');
-              
-                             if (exportOptions.mode === 'full') {
-                 // 导出完整截图
-                 finalCanvas = fullCanvas;
-                 showNotification('完整截图导出成功！', 'success');
-               } else {
-                 // 普通裁切模式
-                 finalCanvas = simpleCrop(fullCanvas, cardRect, video, exportOptions.padding);
-                 showNotification('普通裁切导出成功！', 'success');
-               }
-              
-              // 下载图片
-              const link = document.createElement('a');
-              link.download = \`github-card-\${repoName}-\${exportOptions.mode}.png\`;
-              link.href = finalCanvas.toDataURL('image/png', 1.0);
-              link.click();
-              
-            } catch (error) {
-              console.error('截图导出失败:', error);
-              if (error.message.includes('用户取消')) {
-                showNotification('已取消截图导出', 'info');
-              } else {
-                showNotification('截图导出失败：' + error.message + '\\n\\n请确保允许网站访问屏幕截图权限', 'error');
+
+              try {
+                // 检查 html-to-image 库是否加载
+                if (typeof htmlToImage === 'undefined') {
+                  throw new Error('html-to-image 库未加载');
+                }
+
+                // 更新 loading 消息
+                updateGlobalLoadingMessage(\`生成 \${exportOptions.format.toUpperCase()} 图片...\`);
+
+                // 根据格式选择导出方法，使用导出容器
+                if (exportOptions.format === 'png') {
+                  dataUrl = await htmlToImage.toPng(exportContainer, options);
+                } else if (exportOptions.format === 'jpeg') {
+                  dataUrl = await htmlToImage.toJpeg(exportContainer, options);
+                } else if (exportOptions.format === 'svg') {
+                  dataUrl = await htmlToImage.toSvg(exportContainer, options);
+                }
+
+                // 更新 loading 消息
+                updateGlobalLoadingMessage('准备下载...');
+
+                // 下载图片
+                const link = document.createElement('a');
+                link.download = \`github-card-\${repoName}.\${exportOptions.format}\`;
+                link.href = dataUrl;
+                link.click();
+
+                // 隐藏全局 loading
+                hideGlobalLoading();
+
+                showNotification(\`\${exportOptions.format.toUpperCase()} 格式导出成功！\`, 'success');
+
+              } finally {
+                // 清理导出容器
+                if (exportContainer && exportContainer.parentNode) {
+                  exportContainer.parentNode.removeChild(exportContainer);
+                }
               }
+
+            } catch (error) {
+              console.error('html-to-image 导出失败:', error);
+
+              // 隐藏全局 loading
+              hideGlobalLoading();
+
+              // 提供更详细的错误信息
+              let errorMessage = '图片导出失败';
+              if (error.message.includes('html-to-image 库未加载')) {
+                errorMessage = '图片库加载失败，请刷新页面重试';
+              } else if (error.message.includes('backdrop-filter')) {
+                errorMessage = '浏览器不支持某些视觉效果';
+              } else {
+                errorMessage = '图片导出失败：' + error.message;
+              }
+
+              showNotification(errorMessage, 'error');
             } finally {
               // 恢复按钮状态
               downloadBtn.innerHTML = originalText;
               downloadBtn.disabled = false;
+
+              // 确保隐藏全局 loading（防止异常情况）
+              hideGlobalLoading();
             }
           }
           
@@ -437,102 +544,464 @@ app.get('/', async (c) => {
                 align-items: center;
                 justify-content: center;
                 z-index: 10000;
+                overflow-y: auto;
+                padding: 20px;
               \`;
-              
+
               modal.innerHTML = \`
-                <div style="
+                <div class="modal-content" style="
                   background: white;
                   padding: 30px;
                   border-radius: 12px;
-                  max-width: 500px;
-                  width: 90%;
+                  max-width: 900px;
+                  width: 95%;
                   text-align: center;
+                  max-height: 90vh;
+                  overflow-y: auto;
                 ">
-                  <h3 style="margin-top: 0; color: #333;">🎨 选择导出方式</h3>
-                  <p style="color: #666; margin-bottom: 20px;">选择最适合您的导出方式</p>
-                  
-                  <div style="display: grid; gap: 15px; margin-bottom: 20px;">
-                    <button class="export-option" data-mode="full" style="
-                      padding: 15px;
-                      border: 2px solid #e0e0e0;
-                      border-radius: 8px;
-                      background: white;
-                      cursor: pointer;
-                      text-align: left;
-                      transition: all 0.2s;
-                    ">
-                      <strong>🖼️ 完整截图</strong><br>
-                      <small style="color: #666;">保存整个截图，不进行裁切</small>
-                    </button>
-                    
-                                         <button class="export-option" data-mode="simple" style="
-                       padding: 15px;
-                       border: 2px solid #e0e0e0;
-                       border-radius: 8px;
-                       background: white;
-                       cursor: pointer;
-                       text-align: left;
-                       transition: all 0.2s;
-                     ">
-                       <strong>✂️ 普通裁切</strong><br>
-                       <small style="color: #666;">自动裁切卡片区域</small>
-                     </button>
+                  <h3 style="margin-top: 0; color: #333;">🎨 选择导出选项</h3>
+                  <p style="color: #666; margin-bottom: 25px;">选择图片格式和导出方式，右侧可实时预览效果</p>
+
+                  <!-- 主要内容区域：左侧配置，右侧预览 -->
+                  <div style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 30px;
+                    align-items: start;
+                    margin-bottom: 25px;
+                  " id="main-content">
+
+                    <!-- 左侧：配置选项 -->
+                    <div style="text-align: left;">
+                      <h4 style="margin-bottom: 15px; color: #333; text-align: center;">⚙️ 配置选项</h4>
+
+                      <!-- 图片格式选择 -->
+                      <div style="margin-bottom: 25px;">
+                        <label style="display: block; margin-bottom: 10px; color: #333; font-weight: 600;">📷 图片格式</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                          <button class="format-option" data-format="png" style="
+                            padding: 10px 6px;
+                            border: 2px solid #667eea;
+                            border-radius: 8px;
+                            background: #f8f9ff;
+                            cursor: pointer;
+                            font-size: 11px;
+                            transition: all 0.2s;
+                          ">
+                            <strong>PNG</strong><br>
+                            <small style="color: #666;">无损压缩</small>
+                          </button>
+                          <button class="format-option" data-format="jpeg" style="
+                            padding: 10px 6px;
+                            border: 2px solid #e0e0e0;
+                            border-radius: 8px;
+                            background: white;
+                            cursor: pointer;
+                            font-size: 11px;
+                            transition: all 0.2s;
+                          ">
+                            <strong>JPEG</strong><br>
+                            <small style="color: #666;">小文件</small>
+                          </button>
+                          <button class="format-option" data-format="svg" style="
+                            padding: 10px 6px;
+                            border: 2px solid #e0e0e0;
+                            border-radius: 8px;
+                            background: white;
+                            cursor: pointer;
+                            font-size: 11px;
+                            transition: all 0.2s;
+                          ">
+                            <strong>SVG</strong><br>
+                            <small style="color: #666;">矢量图</small>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- JPEG 质量设置 -->
+                      <div id="jpeg-quality" style="margin-bottom: 20px; display: none;">
+                        <label style="display: block; margin-bottom: 5px; color: #333;">JPEG 质量：</label>
+                        <input type="range" id="quality-slider" min="0.1" max="1" step="0.1" value="0.9" style="width: 100%;">
+                        <small style="color: #666;"><span id="quality-value">90</span>%</small>
+                      </div>
+
+                      <!-- 背景和边距设置 -->
+                      <div style="margin-bottom: 25px;">
+                        <label style="display: block; margin-bottom: 10px; color: #333; font-weight: 600;">🎨 背景设置</label>
+
+                        <!-- 背景选择 -->
+                        <div style="margin-bottom: 15px;">
+                          <!-- 渐变背景选项 -->
+                          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                            <button class="bg-option" data-bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="
+                              padding: 6px;
+                              border: 2px solid #e0e0e0;
+                              border-radius: 6px;
+                              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                              color: white;
+                              cursor: pointer;
+                              font-size: 9px;
+                              text-align: center;
+                            ">紫蓝</button>
+                            <button class="bg-option" data-bg="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="
+                              padding: 6px;
+                              border: 2px solid #e0e0e0;
+                              border-radius: 6px;
+                              background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                              color: white;
+                              cursor: pointer;
+                              font-size: 9px;
+                              text-align: center;
+                            ">粉红</button>
+                            <button class="bg-option" data-bg="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" style="
+                              padding: 6px;
+                              border: 2px solid #e0e0e0;
+                              border-radius: 6px;
+                              background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                              color: white;
+                              cursor: pointer;
+                              font-size: 9px;
+                              text-align: center;
+                            ">蓝青</button>
+                          </div>
+
+                          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px;">
+                            <button class="bg-option" data-bg="linear-gradient(135deg, #fa709a 0%, #fee140 100%)" style="
+                              padding: 6px;
+                              border: 2px solid #e0e0e0;
+                              border-radius: 6px;
+                              background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+                              color: white;
+                              cursor: pointer;
+                              font-size: 9px;
+                              text-align: center;
+                            ">橙粉</button>
+                            <button class="bg-option" data-bg="linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)" style="
+                              padding: 6px;
+                              border: 2px solid #e0e0e0;
+                              border-radius: 6px;
+                              background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+                              color: #333;
+                              cursor: pointer;
+                              font-size: 9px;
+                              text-align: center;
+                            ">薄荷</button>
+                            <button class="bg-option" data-bg="linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" style="
+                              padding: 6px;
+                              border: 2px solid #e0e0e0;
+                              border-radius: 6px;
+                              background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+                              color: #333;
+                              cursor: pointer;
+                              font-size: 9px;
+                              text-align: center;
+                            ">暖橙</button>
+                          </div>
+                        </div>
+
+                        <!-- 内边距设置 -->
+                        <div style="margin-bottom: 15px;">
+                          <label style="display: block; margin-bottom: 5px; color: #333;">内边距：</label>
+                          <input type="range" id="padding-slider" min="0" max="100" value="40" style="width: 100%;">
+                          <small style="color: #666;"><span id="padding-value">40</span>px</small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 右侧：实时预览 -->
+                    <div style="text-align: center;">
+                      <h4 style="margin-bottom: 15px; color: #333;">👀 实时预览</h4>
+                      <div style="
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 350px;
+                        padding: 20px;
+                      ">
+                        <div id="preview-container" style="
+                          border: 2px dashed #e0e0e0;
+                          border-radius: 12px;
+                          background: #f9f9f9;
+                          position: relative;
+                          overflow: hidden;
+                          transition: all 0.3s ease;
+                        ">
+                          <div id="preview-card">
+                            <!-- 预览卡片将在这里动态生成 -->
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 5px; color: #333;">边距大小：</label>
-                    <input type="range" id="padding-slider" min="0" max="50" value="20" style="width: 100%;">
-                    <small style="color: #666;"><span id="padding-value">20</span>px 边距</small>
-                  </div>
-                  
+
+                  <!-- 响应式处理 -->
+                  <style>
+                    @media (max-width: 768px) {
+                      #main-content {
+                        grid-template-columns: 1fr !important;
+                        gap: 20px !important;
+                      }
+                      .modal-content {
+                        max-width: 95% !important;
+                        padding: 20px !important;
+                      }
+                    }
+                    @media (max-width: 480px) {
+                      .modal-content {
+                        padding: 15px !important;
+                      }
+                      #main-content {
+                        gap: 15px !important;
+                      }
+                    }
+                  </style>
+
                   <div style="display: flex; gap: 10px; justify-content: center;">
                     <button id="cancel-export" style="
-                      padding: 10px 20px;
+                      padding: 12px 24px;
                       border: 1px solid #ccc;
                       border-radius: 6px;
                       background: white;
                       cursor: pointer;
                     ">取消</button>
+                    <button id="confirm-export" style="
+                      padding: 12px 24px;
+                      border: none;
+                      border-radius: 6px;
+                      background: #667eea;
+                      color: white;
+                      cursor: pointer;
+                      font-weight: 600;
+                    ">导出图片</button>
                   </div>
                 </div>
               \`;
               
               document.body.appendChild(modal);
-              
-              // 添加事件监听
+
+              // 状态管理
+              let selectedFormat = 'png';
+              let selectedBackground = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+
+              // 格式选择事件监听
+              const formatOptions = modal.querySelectorAll('.format-option');
+              const qualitySection = modal.querySelector('#jpeg-quality');
+              const qualitySlider = modal.querySelector('#quality-slider');
+              const qualityValue = modal.querySelector('#quality-value');
+
+              // 背景选择事件监听
+              const bgOptions = modal.querySelectorAll('.bg-option');
               const paddingSlider = modal.querySelector('#padding-slider');
               const paddingValue = modal.querySelector('#padding-value');
-              paddingSlider.oninput = () => {
-                paddingValue.textContent = paddingSlider.value;
-              };
-              
-              // 选项按钮点击效果
-              modal.querySelectorAll('.export-option').forEach(btn => {
+
+              // 预览相关元素
+              const previewContainer = modal.querySelector('#preview-container');
+              const previewCard = modal.querySelector('#preview-card');
+
+              // 创建预览卡片函数
+              function createPreviewCard() {
+                const originalCard = document.getElementById('github-card');
+                if (!originalCard) return;
+
+                // 获取原始卡片的尺寸
+                const cardRect = originalCard.getBoundingClientRect();
+                const originalWidth = cardRect.width;
+                const originalHeight = cardRect.height;
+
+                // 克隆原始卡片的HTML结构
+                const cardHTML = originalCard.outerHTML;
+                previewCard.innerHTML = cardHTML;
+
+                // 获取预览卡片元素并设置ID以避免冲突
+                const clonedCard = previewCard.querySelector('#github-card');
+                if (clonedCard) {
+                  clonedCard.id = 'preview-github-card';
+                  // 移除点击事件
+                  clonedCard.removeAttribute('onclick');
+                  clonedCard.style.cursor = 'default';
+
+                  // 保持原始卡片的尺寸比例
+                  clonedCard.style.width = originalWidth + 'px';
+                  clonedCard.style.height = originalHeight + 'px';
+                }
+
+                // 存储原始尺寸供后续使用
+                previewCard.dataset.originalWidth = originalWidth;
+                previewCard.dataset.originalHeight = originalHeight;
+              }
+
+              // 更新预览函数
+              function updatePreview() {
+                const padding = parseInt(paddingSlider.value);
+                const originalWidth = parseFloat(previewCard.dataset.originalWidth || '550');
+                const originalHeight = parseFloat(previewCard.dataset.originalHeight || '300');
+
+                // 计算包含内边距的总尺寸（模拟最终导出图片的尺寸）
+                const totalWidth = originalWidth + (padding * 2);
+                const totalHeight = originalHeight + (padding * 2);
+
+                // 计算预览容器的最大可用空间（响应式）
+                const isMobile = window.innerWidth <= 768;
+                const maxPreviewWidth = isMobile ? 280 : 350; // 预览区域最大宽度
+                const maxPreviewHeight = isMobile ? 300 : 400; // 预览区域最大高度
+
+                // 计算缩放比例，保持宽高比
+                const scaleX = maxPreviewWidth / totalWidth;
+                const scaleY = maxPreviewHeight / totalHeight;
+                const scale = Math.min(scaleX, scaleY, 0.8); // 最大缩放到80%
+
+                // 应用缩放和尺寸
+                const scaledWidth = totalWidth * scale;
+                const scaledHeight = totalHeight * scale;
+                const scaledPadding = padding * scale;
+
+                // 更新预览容器尺寸和样式
+                previewContainer.style.width = scaledWidth + 'px';
+                previewContainer.style.height = scaledHeight + 'px';
+                previewContainer.style.padding = scaledPadding + 'px';
+                previewContainer.style.boxSizing = 'border-box';
+
+                // 更新预览容器背景
+                previewContainer.style.background = selectedBackground;
+                previewContainer.style.backgroundSize = 'cover';
+                previewContainer.style.backgroundPosition = 'center';
+
+                // 更新预览卡片的缩放
+                const clonedCard = previewCard.querySelector('#preview-github-card');
+                if (clonedCard) {
+                  clonedCard.style.transform = \`scale(\${scale})\`;
+                  clonedCard.style.transformOrigin = 'top left';
+                  clonedCard.style.position = 'relative';
+                }
+
+                // 重置预览卡片容器的transform
+                previewCard.style.transform = 'none';
+                previewCard.style.width = 'auto';
+                previewCard.style.height = 'auto';
+
+                // 添加格式标识
+                const formatIndicator = modal.querySelector('#format-indicator');
+                if (formatIndicator) {
+                  formatIndicator.textContent = selectedFormat.toUpperCase();
+                } else {
+                  const indicator = document.createElement('div');
+                  indicator.id = 'format-indicator';
+                  indicator.style.cssText = \`
+                    position: absolute;
+                    top: 5px;
+                    right: 5px;
+                    background: rgba(0, 0, 0, 0.7);
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 10px;
+                    font-weight: bold;
+                    z-index: 10;
+                  \`;
+                  indicator.textContent = selectedFormat.toUpperCase();
+                  previewContainer.appendChild(indicator);
+                }
+
+                // 添加尺寸信息显示
+                const sizeInfo = modal.querySelector('#size-info');
+                if (sizeInfo) {
+                  sizeInfo.textContent = \`\${Math.round(totalWidth)} × \${Math.round(totalHeight)}px\`;
+                } else {
+                  const info = document.createElement('div');
+                  info.id = 'size-info';
+                  info.style.cssText = \`
+                    position: absolute;
+                    bottom: 5px;
+                    left: 5px;
+                    background: rgba(0, 0, 0, 0.7);
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 10px;
+                    z-index: 10;
+                  \`;
+                  info.textContent = \`\${Math.round(totalWidth)} × \${Math.round(totalHeight)}px\`;
+                  previewContainer.appendChild(info);
+                }
+              }
+
+              // 初始化预览
+              createPreviewCard();
+              updatePreview();
+
+              formatOptions.forEach(btn => {
                 btn.onclick = () => {
-                  document.body.removeChild(modal);
-                  resolve({
-                    mode: btn.dataset.mode,
-                    padding: parseInt(paddingSlider.value)
+                  // 重置所有按钮样式
+                  formatOptions.forEach(b => {
+                    b.style.borderColor = '#e0e0e0';
+                    b.style.backgroundColor = 'white';
                   });
-                };
-                
-                btn.onmouseenter = () => {
+
+                  // 设置选中样式
                   btn.style.borderColor = '#667eea';
                   btn.style.backgroundColor = '#f8f9ff';
-                };
-                
-                btn.onmouseleave = () => {
-                  btn.style.borderColor = '#e0e0e0';
-                  btn.style.backgroundColor = 'white';
+
+                  selectedFormat = btn.dataset.format;
+
+                  // 显示/隐藏 JPEG 质量设置
+                  if (selectedFormat === 'jpeg') {
+                    qualitySection.style.display = 'block';
+                  } else {
+                    qualitySection.style.display = 'none';
+                  }
+
+                  // 更新预览
+                  updatePreview();
                 };
               });
-              
+
+              // 背景选择事件
+              bgOptions.forEach(btn => {
+                btn.onclick = () => {
+                  // 重置所有背景按钮样式
+                  bgOptions.forEach(b => {
+                    b.style.borderColor = '#e0e0e0';
+                  });
+
+                  // 设置选中样式
+                  btn.style.borderColor = '#667eea';
+                  selectedBackground = btn.dataset.bg;
+
+                  // 更新预览
+                  updatePreview();
+                };
+              });
+
+              // 内边距滑块
+              paddingSlider.oninput = () => {
+                paddingValue.textContent = paddingSlider.value;
+                // 更新预览
+                updatePreview();
+              };
+
+              // JPEG 质量滑块
+              qualitySlider.oninput = () => {
+                qualityValue.textContent = Math.round(qualitySlider.value * 100);
+                // 质量改变不需要更新预览，因为预览不显示压缩效果
+              };
+
+              // 确认导出按钮
+              modal.querySelector('#confirm-export').onclick = () => {
+                document.body.removeChild(modal);
+                resolve({
+                  format: selectedFormat,
+                  quality: selectedFormat === 'jpeg' ? parseFloat(qualitySlider.value) : 1.0,
+                  backgroundColor: selectedBackground,
+                  padding: parseInt(paddingSlider.value)
+                });
+              };
+
               // 取消按钮
               modal.querySelector('#cancel-export').onclick = () => {
                 document.body.removeChild(modal);
                 resolve(null);
               };
-              
+
               // 点击背景关闭
               modal.onclick = (e) => {
                 if (e.target === modal) {
@@ -588,14 +1057,19 @@ app.get('/', async (c) => {
             window.open(url, '_blank', 'noopener,noreferrer');
           }
           
-          // 主导出函数 - 直接使用截图方式
+          // 主导出函数 - 优先使用 html-to-image
           async function downloadCard() {
-            // 检查是否支持 Screen Capture API
-            if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-              await downloadCardByScreenshot();
-            } else {
-              // 浏览器不支持截图API，显示提示信息
-              showNotification('抱歉，您的浏览器不支持屏幕截图功能，请使用最新版的 Chrome、Edge 或 Firefox 浏览器', 'error');
+            try {
+              // 优先使用 html-to-image 方案
+              await downloadCardByHtmlToImage();
+            } catch (error) {
+              console.error('html-to-image 导出失败:', error);
+
+              // 确保隐藏全局 loading
+              hideGlobalLoading();
+
+              // 显示错误信息
+              showNotification('图片导出失败，请尝试刷新页面后重试', 'error');
             }
           }
           

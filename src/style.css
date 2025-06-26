@@ -853,6 +853,16 @@ body {
   }
 }
 
+/* 全局 loading 动画 */
+@keyframes globalSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .action-btn:disabled .btn-icon svg {
   animation: spin 1s linear infinite;
 }
