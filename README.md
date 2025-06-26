@@ -1,11 +1,16 @@
-# GitHub 项目卡片生成器
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/a0f557f9-a42e-445a-933e-41205ce75f9b" alt="Liquid Glass GitHub Repo Card" width="100%" />
+</p>
+
+# <p align="center">Liquid Glass GitHub Repo Card</p>
 
 一个采用 **Liquid Glass（液态玻璃）** 风格设计的 GitHub 项目卡片生成工具，输入项目地址即可生成具有现代化玻璃质感的精美项目展示卡片，支持导出图片。
 
 ## 预览
 
-<img width="711" alt="preview" src="https://github.com/user-attachments/assets/9373e1bd-a123-43a8-8d23-792276f57316" />
-
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/e648099e-ad43-4b9d-ae3d-0f699d020384" alt="Liquid Glass GitHub Repo Card" width="100%" />
+</p>
 
 ## ✨ 主要功能
 
